@@ -12,12 +12,10 @@ export class AuthService {
 
   // ## USER SIGNUP
 
-  async signup({
-    name,
-    email,
-    phone,
-    password,
-  }: SignupParams): Promise<{ token: string }> {
+  async signup(
+    { name, email, phone, password }: SignupParams,
+    userType: UserType,
+  ): Promise<{ token: string }> {
     const userExists = await this.prismaService.user.findUnique({
       where: { email },
     });
@@ -29,7 +27,7 @@ export class AuthService {
         email,
         phone,
         password: hashedPassword,
-        user_type: UserType.BUYER,
+        user_type: userType,
       },
     });
 
@@ -47,5 +45,11 @@ export class AuthService {
     if (!isValidPassword) return errorHandler(403);
     const token = await generateToken({ name: user.name, id: user.id });
     return { token };
+  }
+
+  async generateProductKey(email: string, userType: UserType) {
+    const string = `${email}-${userType}-${process.env.PRODUCT_KEY_SECRET}`;
+
+    return await bcrypt.hash(string, 10);
   }
 }
